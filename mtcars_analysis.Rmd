@@ -1,0 +1,69 @@
+---
+title: "Analysis of MPG of Automatic and Manual Transmission Cars"
+author: "Chris Song"
+date: "Saturday, January 24, 2015"
+output: pdf_document
+---
+
+# Executive Summary
+Given the cars data (`mtcars`) provided by the 1974 _Motor Trend_ US magazine, we will use linear regression models provided by R to answer the following two questions:  
+
+- “Is an automatic or manual transmission better for MPG”
+- "Quantify the MPG difference between automatic and manual transmissions"
+
+Our analysis based on a simple linear model is that manual tranmission cars have higher average MPG than the automatic cars. The difference is 7.2 miles. However, with further analysis, we'll also show that there're other confounding variables, such as weight, horsepower, and cylinders, that when included in the regression model, will reduce the impact of the transmission variable.
+
+# Regresion Model of MPG and Transmission
+
+The following code builds a linear regression model to predict MPG using transmission as the predictor.
+
+```{r, }
+data(mtcars)
+fit <- lm(mpg ~ factor(am), data=mtcars)
+(coeff <- summary(fit)$coefficients)
+```
+
+Here the *intercept* (`r round(coeff[1,1], 1)`) is the average mileage of automatic transmission, and the *slope* (`r round(coeff[2,1], 1)`)is the difference between average mileage of manual transmission and that of the automatic transmission. From here we can see that manual transmission has a `r round(coeff[2,1], 1)` higher mileage than automatic transmission. 
+
+Figure 1 shows the regression line. Figure 2 shows the average MPG for automatic and manual transmission. 
+
+# Diagnostic Analysis
+
+```{r,include=FALSE}
+pval <- t.test(mpg ~ factor(am), data=mtcars)$p.value
+```
+Running `hatvalues(fit)` and `dfbetas(fit)`, we didn't find any obvious outliers. Figure 3 shows the residual plots, which shows that the variance is uniform. Running `t.test(mpg ~ factor(am), data=mtcars)` shows the `p-value` as `r pval`, which means that the impact of transmission to MPG is significant.
+
+# Explore Multiple Models
+Using multivariable regression analysis, we found that the adjusted impact of transmission is much smaller when adjusting for other variables such as weight, horsepower, and number of cyclinders. 
+
+```{r, }
+fit2 <- lm(mpg ~ wt + cyl + hp + am, data=mtcars)
+(coeff2 <- summary(fit2)$coefficients)
+```
+As you can see the impact of transmission to MPG after adjusting for other variables has become `r round(coeff2[5,1],1)`, much smaller than the unadjusted value of `r round(coeff[2,1],1)`
+
+# Appendix
+
+## Figure 1 Regression Plot of MPG and Transmission
+
+```{r, echo=FALSE}
+attach(mtcars)
+plot(am, mpg, pch=19, col="blue", xlab="transmission", ylab="mpg")
+abline(fit, lwd=3, col="red")
+```
+
+## Figure 2 Average MPG of Automatic and Manual Transmission Cars
+
+```{r, echo=FALSE}
+mycars <- mtcars
+mycars$am <- factor(mycars$am, labels=c("Manual", "Automatic"))
+boxplot(mpg ~ am, data=mycars, xlab="transmission", ylab="mpg")
+```
+
+## Figure 3 Residual Plot of the Linear Model MPG ~ AM
+```{r, echo=FALSE}
+par(mfrow=c(2,2))
+plot(fit)
+```
+
